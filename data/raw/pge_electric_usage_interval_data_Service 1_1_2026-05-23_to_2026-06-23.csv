@@ -1,7 +1,7 @@
 ﻿
 Name, LAZY S LLC
 Address,"SE SW 6 16 26, OROSI CA 93647"
-Account Number,8506916322
+Account Number
 Service,Service 1
 
 TYPE,DATE,START TIME,END TIME,USAGE (kWh),COST,NOTES
