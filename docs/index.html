@@ -6,7 +6,7 @@
 <title>Lazy S Ranch — Electric Usage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #1B241E;
@@ -322,31 +322,36 @@ function lastFullDay(readings) {
     });
   });
 
-  new Chart(document.getElementById('loadProfileChart'), {
-    type: 'bar',
-    data: {
-      labels: Array.from({length: 24}, (_, h) => `${h}:00`),
-      datasets: categories.map(cat => ({
-        label: cat,
-        data: hourBuckets.map(b => +b[cat].toFixed(2)),
-        backgroundColor: CATEGORY_COLORS[cat] || '#777',
-        stack: 'usage',
-        borderRadius: 2,
-      })),
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { stacked: true, grid: { color: '#3A4A3F' }, ticks: { color: '#93A395', font: { family: 'IBM Plex Mono', size: 10 } } },
-        y: { stacked: true, grid: { color: '#3A4A3F' }, ticks: { color: '#93A395', font: { family: 'IBM Plex Mono', size: 10 } }, title: { display: true, text: 'kWh', color: '#93A395' } },
+  if (typeof Chart === 'undefined') {
+    document.querySelector('.chart-box').innerHTML =
+      '<p style="color:#D1495B;font-family:\'IBM Plex Mono\',monospace;font-size:13px;">Chart library failed to load from CDN — check your network/ad-blocker. Meter cards below are unaffected.</p>';
+  } else {
+    new Chart(document.getElementById('loadProfileChart'), {
+      type: 'bar',
+      data: {
+        labels: Array.from({length: 24}, (_, h) => `${h}:00`),
+        datasets: categories.map(cat => ({
+          label: cat,
+          data: hourBuckets.map(b => +b[cat].toFixed(2)),
+          backgroundColor: CATEGORY_COLORS[cat] || '#777',
+          stack: 'usage',
+          borderRadius: 2,
+        })),
       },
-      plugins: {
-        legend: { labels: { color: '#ECEAE0', font: { family: 'Inter', size: 12 } } },
-        tooltip: { titleFont: { family: 'IBM Plex Mono' }, bodyFont: { family: 'IBM Plex Mono' } },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { color: '#3A4A3F' }, ticks: { color: '#93A395', font: { family: 'IBM Plex Mono', size: 10 } } },
+          y: { stacked: true, grid: { color: '#3A4A3F' }, ticks: { color: '#93A395', font: { family: 'IBM Plex Mono', size: 10 } }, title: { display: true, text: 'kWh', color: '#93A395' } },
+        },
+        plugins: {
+          legend: { labels: { color: '#ECEAE0', font: { family: 'Inter', size: 12 } } },
+          tooltip: { titleFont: { family: 'IBM Plex Mono' }, bodyFont: { family: 'IBM Plex Mono' } },
+        },
       },
-    },
-  });
+    });
+  }
 
   // ---- Meter cards grouped by category ----
   const groupsEl = document.getElementById('groups');
@@ -376,26 +381,28 @@ function lastFullDay(readings) {
       grid.appendChild(card);
 
       const ctx = card.querySelector('canvas');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: readings.map(r => r.timestamp),
-          datasets: [{
-            data: readings.map(r => r.kwh),
-            borderColor: CATEGORY_COLORS[cat] || '#E8A33D',
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            tension: 0.3,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { x: { display: false }, y: { display: false } },
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        },
-      });
+      if (typeof Chart !== 'undefined') {
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: readings.map(r => r.timestamp),
+            datasets: [{
+              data: readings.map(r => r.kwh),
+              borderColor: CATEGORY_COLORS[cat] || '#E8A33D',
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.3,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { display: false }, y: { display: false } },
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          },
+        });
+      }
     });
 
     groupDiv.appendChild(grid);
