@@ -1,0 +1,36 @@
+name: Process PG&E usage CSVs
+
+# Runs whenever a new Green Button CSV export is added/changed under
+# data/raw/. Drop your export there (via GitHub's web upload, git push, or
+# a synced folder), and this turns it into the JSON the dashboard reads.
+
+on:
+  push:
+    paths:
+      - "data/raw/*.csv"
+      - "data/meter_labels.json"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Parse CSV exports
+        run: python scripts/parse_csv_exports.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "pge-data-bot"
+          git config user.email "actions@github.com"
+          git add docs/data/usage_latest.json docs/data/usage_history.json
+          git diff --staged --quiet || git commit -m "Update PG&E usage data from CSV export"
+          git push

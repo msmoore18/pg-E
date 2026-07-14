@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lazy S Ranch — Electric Usage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #1B241E;
+    --surface: #232F27;
+    --surface-2: #2C3A31;
+    --line: #3A4A3F;
+    --text: #ECEAE0;
+    --text-muted: #93A395;
+    --gold: #E8A33D;
+    --gold-dim: #6b5426;
+    --water: #4C93A6;
+    --water-dim: #294a54;
+    --alert: #D1495B;
+    --alert-dim: #4a2129;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  header.hero {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+    margin-bottom: 32px;
+  }
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 6px;
+  }
+  .hero-farm {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.02;
+    margin: 0;
+  }
+  .hero-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .hero-stat {
+    text-align: right;
+  }
+  .hero-stat .num {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(36px, 6vw, 56px);
+    color: var(--gold);
+    line-height: 1;
+  }
+  .hero-stat .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 6px;
+  }
+
+  .status-banner {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .status-banner.live .status-dot { background: var(--gold); box-shadow: 0 0 0 4px var(--gold-dim); }
+
+  section.load-profile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 4px;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 18px;
+  }
+  .chart-box { position: relative; height: 280px; }
+
+  .meter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .meter-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .meter-card.flag { border-color: var(--alert); background: linear-gradient(180deg, var(--alert-dim), var(--surface) 40%); }
+  .meter-cat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--water);
+    margin: 0 0 4px;
+  }
+  .meter-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 12px;
+  }
+  .meter-kwh {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+  }
+  .meter-kwh span { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+  .meter-mini { height: 60px; margin-top: 10px; }
+  .meter-flag-note {
+    font-size: 12px;
+    color: var(--alert);
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .groups {
+    display: grid;
+    gap: 32px;
+  }
+  .group-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  footer {
+    margin-top: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    header.hero { flex-direction: column; align-items: flex-start; }
+    .hero-stat { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <p class="hero-title">Lazy S Ranch</p>
+      <h1 class="hero-farm">Electric Usage</h1>
+      <p class="hero-meta" id="metaLine">Loading data&hellip;</p>
+    </div>
+    <div class="hero-stat">
+      <div class="num" id="totalYesterday">&mdash;</div>
+      <div class="label">kWh, most recent day</div>
+    </div>
+  </header>
+
+  <div class="status-banner" id="statusBanner">
+    <div class="status-dot"></div>
+    <span id="statusText">Showing sample data — connect the Share My Data pipeline to see live meter readings.</span>
+  </div>
+
+  <section class="load-profile">
+    <p class="section-label">24-hour load profile</p>
+    <h2 class="section-title">Whole-account usage by category</h2>
+    <div class="chart-box"><canvas id="loadProfileChart"></canvas></div>
+  </section>
+
+  <div class="groups" id="groups"></div>
+
+  <footer>Data via PG&amp;E Share My Data (Green Button Connect) &middot; 15-minute intervals, next-day delivery &middot; last sync <span id="lastSync">&mdash;</span></footer>
+</div>
+
+<script>
+const CATEGORY_COLORS = {
+  "Irrigation Pumps": "#E8A33D",
+  "Wells": "#4C93A6",
+  "Wind Machines": "#9B7FC7",
+  "Solar / NEM2": "#6FBF73",
+  "Unlabeled Meters": "#93A395",
+};
+
+const METER_CATEGORY = (name) => {
+  if (/pump/i.test(name)) return "Irrigation Pumps";
+  if (/well/i.test(name)) return "Wells";
+  if (/wind machine/i.test(name)) return "Wind Machines";
+  if (/solar|nem/i.test(name)) return "Solar / NEM2";
+  // Unlabeled Green Button "Service N" exports land here until named in
+  // data/meter_labels.json - still fully charted, just ungrouped for now.
+  return "Unlabeled Meters";
+};
+
+// ---- Demo data (used until data/usage_history.json exists from a live pull) ----
+function buildDemoData() {
+  const meters = [
+    "Northern Blocks Irrigation Pump", "Middle Blocks Irrigation Pump + NEM2 Solar",
+    "Southern Blocks Irrigation Pump", "Well #1", "Well #3", "Well #4", "Well #5",
+    "Well #6", "Well #7", "Well #9",
+    ...Array.from({length: 10}, (_, i) => `Wind Machine #${i+1}`),
+  ];
+  const now = new Date();
+  const out = { meters: {}, last_updated: now.toISOString() };
+  meters.forEach((name) => {
+    const isWind = /Wind Machine/.test(name);
+    const isPump = /Pump/.test(name);
+    const base = isWind ? 2.8 : isPump ? 9.5 : 3.2;
+    const readings = [];
+    for (let h = 0; h < 24; h++) {
+      for (let q = 0; q < 4; q++) {
+        const hour = h + q / 4;
+        let mult = 1;
+        if (isWind) mult = (hour < 6 || hour > 21) ? (1.5 + Math.random()) : 0.05;
+        else if (isPump) mult = (hour > 5 && hour < 20) ? (1 + Math.random() * 0.6) : 0.15;
+        else mult = 0.7 + Math.random() * 0.6;
+        const d = new Date(now); d.setHours(0,0,0,0); d.setMinutes(d.getMinutes() + h*60 + q*15);
+        readings.push({ timestamp: d.toISOString(), kwh: +(base * mult / 4).toFixed(3), duration_s: 900 });
+      }
+    }
+    out.meters[name] = readings;
+  });
+  // simulate the Wind Machine #8 anomaly we flagged before, absent here on purpose
+  return out;
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch('./data/usage_history.json', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('no data yet');
+    const json = await resp.json();
+    document.getElementById('statusBanner').classList.add('live');
+    document.getElementById('statusText').textContent = 'Live data from PG&E Share My Data.';
+    return json;
+  } catch (e) {
+    return buildDemoData();
+  }
+}
+
+function sumKwh(readings) { return readings.reduce((s, r) => s + r.kwh, 0); }
+
+function lastFullDay(readings) {
+  if (!readings.length) return [];
+  const lastDate = readings[readings.length - 1].timestamp.slice(0, 10);
+  return readings.filter(r => r.timestamp.slice(0, 10) === lastDate);
+}
+
+(async function init() {
+  const data = await loadData();
+  const meterNames = Object.keys(data.meters);
+  document.getElementById('lastSync').textContent = new Date(data.last_updated).toLocaleString();
+  document.getElementById('metaLine').textContent = `${meterNames.length} meters tracked · account 3637809194-0`;
+
+  // ---- Hero total ----
+  let totalYesterday = 0;
+  meterNames.forEach(name => { totalYesterday += sumKwh(lastFullDay(data.meters[name])); });
+  document.getElementById('totalYesterday').textContent = totalYesterday.toFixed(0);
+
+  // ---- Load profile chart (stacked by category, 24h) ----
+  const categories = ["Irrigation Pumps", "Wells", "Wind Machines", "Solar / NEM2", "Unlabeled Meters"];
+  const hourBuckets = Array.from({length: 24}, () => ({}));
+  categories.forEach(c => hourBuckets.forEach(b => b[c] = 0));
+
+  meterNames.forEach(name => {
+    const cat = METER_CATEGORY(name);
+    const day = lastFullDay(data.meters[name]);
+    day.forEach(r => {
+      const hour = new Date(r.timestamp).getHours();
+      hourBuckets[hour][cat] = (hourBuckets[hour][cat] || 0) + r.kwh;
+    });
+  });
+
+  new Chart(document.getElementById('loadProfileChart'), {
+    type: 'bar',
+    data: {
+      labels: Array.from({length: 24}, (_, h) => `${h}:00`),
+      datasets: categories.map(cat => ({
+        label: cat,
+        data: hourBuckets.map(b => +b[cat].toFixed(2)),
+        backgroundColor: CATEGORY_COLORS[cat] || '#777',
+        stack: 'usage',
+        borderRadius: 2,
+      })),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, grid: { color: '#3A4A3F' }, ticks: { color: '#93A395', font: { family: 'IBM Plex Mono', size: 10 } } },
+        y: { stacked: true, grid: { color: '#3A4A3F' }, ticks: { color: '#93A395', font: { family: 'IBM Plex Mono', size: 10 } }, title: { display: true, text: 'kWh', color: '#93A395' } },
+      },
+      plugins: {
+        legend: { labels: { color: '#ECEAE0', font: { family: 'Inter', size: 12 } } },
+        tooltip: { titleFont: { family: 'IBM Plex Mono' }, bodyFont: { family: 'IBM Plex Mono' } },
+      },
+    },
+  });
+
+  // ---- Meter cards grouped by category ----
+  const groupsEl = document.getElementById('groups');
+  categories.forEach(cat => {
+    const names = meterNames.filter(n => METER_CATEGORY(n) === cat);
+    if (!names.length) return;
+    const groupDiv = document.createElement('div');
+    const title = document.createElement('h2');
+    title.className = 'group-title';
+    title.textContent = cat;
+    groupDiv.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'meter-grid';
+
+    names.forEach(name => {
+      const readings = lastFullDay(data.meters[name]);
+      const total = sumKwh(readings);
+      const card = document.createElement('div');
+      card.className = 'meter-card';
+      card.innerHTML = `
+        <p class="meter-cat">${cat}</p>
+        <p class="meter-name">${name}</p>
+        <div class="meter-kwh">${total.toFixed(1)}<span>kWh</span></div>
+        <div class="meter-mini"><canvas></canvas></div>
+      `;
+      grid.appendChild(card);
+
+      const ctx = card.querySelector('canvas');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: readings.map(r => r.timestamp),
+          datasets: [{
+            data: readings.map(r => r.kwh),
+            borderColor: CATEGORY_COLORS[cat] || '#E8A33D',
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.3,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { display: false }, y: { display: false } },
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        },
+      });
+    });
+
+    groupDiv.appendChild(grid);
+    groupsEl.appendChild(groupDiv);
+  });
+})();
+</script>
+</body>
+</html>

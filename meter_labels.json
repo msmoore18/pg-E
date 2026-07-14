@@ -1,0 +1,6 @@
+{
+  "_readme": "Map PG&E's 'Service N' label to what you actually call that meter (e.g. 'Northern Blocks Irrigation Pump'). Anything not listed here just shows as 'Service N' on the dashboard until you fill it in - check the address on each raw CSV in data/raw/ (not published) to figure out which meter is which.",
+  "Service 1": "Service 1",
+  "Service 2": "Service 2",
+  "Service 3": "Service 3"
+}
